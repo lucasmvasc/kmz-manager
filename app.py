@@ -19,7 +19,10 @@ def get_kmzs():
 
 @app.route("/kmzs/<kmz_id>", methods=["GET"])
 def get_kmz(kmz_id):
-    kmz = collection.find_one({"_id": ObjectId(kmz_id)}, {"_id": 0})
+    try:
+        kmz = collection.find_one({"_id": ObjectId(kmz_id)}, {"_id": 0})
+    except:
+        return jsonify({"error": "KMZ not found"}), 404
     if kmz:
         return jsonify(kmz)
     else:
