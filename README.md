@@ -117,7 +117,8 @@ sudo ln -s /etc/nginx/sites-available/kmz-manager /etc/nginx/sites-enabled/
 sudo systemctl restart nginx
 ```
 
-The application should now be accessible at `http://your-server-ip-or-domain`. FYI: if you're using an Virtual Machine, make sure you're using the public Ipv4.
+The application should now be accessible at `http://your-server-ip-or-domain`. <br>
+FYI: if you're using a Virtual Machine, make sure to set your public Ipv4.
 
 ## API Endpoints
 
