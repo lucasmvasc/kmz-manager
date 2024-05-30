@@ -15,7 +15,11 @@ collection = db.kmzs
 @app.route("/kmzs", methods=["GET"])
 def get_kmzs():
     kmzs = collection.find({}, {"_id": 0})
-    return jsonify(list(kmzs))
+    geojson = {
+        "type": "FeatureCollection",
+        "features": list(kmzs)
+    }
+    return jsonify(geojson)
 
 @app.route("/kmzs/<kmz_id>", methods=["GET"])
 def get_kmz(kmz_id):
