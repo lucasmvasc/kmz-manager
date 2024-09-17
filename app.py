@@ -40,7 +40,26 @@ def get_kmz(kmz_id):
 
 @app.route("/kmzs", methods=["POST"])
 def add_kmz():
-    kmz_data = request.get_json()
+    data = request.get_json()
+    try:
+        center_lat, center_lon = data["center_lat"], data["center_lon"]
+    except KeyError:
+        print("Pontos de bloqueio não definidos")
+
+    title = data["title"]
+    description = data["description"]
+    kmz_data = {
+        "type": "Feature",
+        "properties": {
+            "title": title,
+            "description": description
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [center_lat, center_lon]
+        }
+    }
+
     result = collection.insert_one(kmz_data)
     return jsonify({"_id": str(result.inserted_id)})
 
@@ -68,40 +87,45 @@ def get_route():
         center_lat, center_lon = data["center_lat"], data["center_lon"]
     except KeyError:
         center_lat, center_lon = None, None
-        print("Pontos de bloqueio não definidos")
+        print("Pontos origem ou destino não definidos")
+        return jsonify({"error": "Pontos de origem ou destino não definidos"}), 400
     
     origin, destination = data["origin"], data["destination"]
     origin, destination = origin.split(","), destination.split(",")
     origin = (float(origin[0]), float(origin[1]))
     destination = (float(destination[0]), float(destination[1]))
 
-    if data:
-        if center_lat is not None and center_lon is not None:
-            offset= 0.0001
-            blocked_area = [
-                [center_lon + offset, center_lat + offset], 
-                [center_lon - offset, center_lat + offset],
-                [center_lon - offset, center_lat - offset],
-                [center_lon + offset, center_lat - offset],
-                [center_lon + offset, center_lat + offset]
-            ]
-            route = client.directions(
-                coordinates=[origin[::-1], destination[::-1]],  # Reverse coordinates for lon-lat
-                profile='foot-walking',
-                format='geojson',
-                options= {"avoid_polygons":
-                          {"coordinates": [blocked_area], "type": "Polygon"}}
-            )
-
-        else:
-            route = client.directions(
-                coordinates=[origin[::-1], destination[::-1]],  # Reverse coordinates for lon-lat
-                profile='foot-walking',
-                format='geojson'
-            )   
-        return jsonify({"message": "Rota gerada com sucesso", "result":route})
-    else:
-        return jsonify({"error": "KMZ not found"}), 404
+    kmzs = collection.find({}, {"_id": 0})
+    blocked_areas = []
+    for kmz in kmzs:
+        coord = kmz["geometry"]["coordinates"]
+        center_lat, center_lon = coord[0], coord[1]
+        offset= 0.0001
+        blocked_area = [
+            [center_lon + offset, center_lat + offset], 
+            [center_lon - offset, center_lat + offset],
+            [center_lon - offset, center_lat - offset],
+            [center_lon + offset, center_lat - offset],
+            [center_lon + offset, center_lat + offset]
+        ]
+        blocked_areas.append(blocked_area)
+            
+    route = client.directions(
+        coordinates=[origin[::-1], destination[::-1]],
+        profile='foot-walking',
+        format='geojson',
+        options= {"avoid_polygons":{
+        "type": "MultiPolygon",
+        "coordinates": [[area] for area in blocked_areas]}}
+    )
+        # else:
+        #     route = client.directions(
+        #         coordinates=[origin[::-1], destination[::-1]],
+        #         profile='foot-walking',
+        #         format='geojson'
+        #     )
+ 
+    return jsonify({"message": "Rota gerada com sucesso", "result":route})
     
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=False)
