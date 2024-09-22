@@ -3,7 +3,6 @@ from flask_pymongo import PyMongo
 from bson import ObjectId
 from dotenv import load_dotenv
 import os
-import json
 
 import openrouteservice
 
@@ -42,7 +41,7 @@ def get_kmz(kmz_id):
 def add_kmz():
     data = request.get_json()
     try:
-        center_lat, center_lon = data["center_lat"], data["center_lon"]
+        lat, lon = data["lat"], data["lon"]
     except KeyError:
         print("Pontos de bloqueio não definidos")
 
@@ -56,7 +55,7 @@ def add_kmz():
         },
         "geometry": {
             "type": "Point",
-            "coordinates": [center_lat, center_lon]
+            "coordinates": [lat, lon]
         }
     }
 
@@ -83,12 +82,6 @@ def delete_kmz(kmz_id):
 @app.route("/get_route", methods=["GET"])
 def get_route():
     data = request.get_json()
-    try:
-        center_lat, center_lon = data["center_lat"], data["center_lon"]
-    except KeyError:
-        center_lat, center_lon = None, None
-        print("Pontos origem ou destino não definidos")
-        return jsonify({"error": "Pontos de origem ou destino não definidos"}), 400
     
     origin, destination = data["origin"], data["destination"]
     origin, destination = origin.split(","), destination.split(",")
@@ -111,19 +104,15 @@ def get_route():
         blocked_areas.append(blocked_area)
             
     route = client.directions(
-        coordinates=[origin[::-1], destination[::-1]],
-        profile='foot-walking',
-        format='geojson',
-        options= {"avoid_polygons":{
-        "type": "MultiPolygon",
-        "coordinates": [[area] for area in blocked_areas]}}
+        coordinates = [origin[::-1], destination[::-1]],
+        profile = 'foot-walking',
+        format = 'geojson',
+        options = {
+            "avoid_polygons":{
+            "type": "MultiPolygon",
+            "coordinates": [[area] for area in blocked_areas]} 
+        }
     )
-        # else:
-        #     route = client.directions(
-        #         coordinates=[origin[::-1], destination[::-1]],
-        #         profile='foot-walking',
-        #         format='geojson'
-        #     )
  
     return jsonify({"message": "Rota gerada com sucesso", "result":route})
     
