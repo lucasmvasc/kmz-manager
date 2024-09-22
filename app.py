@@ -8,8 +8,8 @@ import openrouteservice
 
 load_dotenv()
 
-OPENROUTE_API_KEY = os.getenv("OPENROUTE_API_KEY")
-client = openrouteservice.Client(key=OPENROUTE_API_KEY)
+OPENROUTES_API_KEY = os.getenv("OPENROUTES_API_KEY")
+client = openrouteservice.Client(key=OPENROUTES_API_KEY)
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = os.environ.get('MONGO_URI')
