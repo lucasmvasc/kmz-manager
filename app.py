@@ -1,8 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from bson import ObjectId
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import os
+import pytz
 
 import openrouteservice
 
@@ -12,10 +17,13 @@ OPENROUTES_API_KEY = os.getenv("OPENROUTES_API_KEY")
 client = openrouteservice.Client(key=OPENROUTES_API_KEY)
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = os.environ.get('MONGO_URI')
+app.config["MONGO_URI"] = os.getenv('MONGO_URI')
 mongo = PyMongo(app)
 db = mongo.cx.get_database("alagaprev")
 collection = db.kmzs
+
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')  # Troque por uma chave segura
+jwt = JWTManager(app)
 
 @app.route("/kmzs", methods=["GET"])
 def get_kmzs():
@@ -115,6 +123,89 @@ def get_route():
     )
  
     return jsonify({"message": "Rota gerada com sucesso", "result":route})
+
+@app.route("/register_user", methods=["POST"])
+def register_user():
+    data = request.get_json()
+    try:
+        username, password, email = data['username'], data['password'], data['email']
+    except KeyError:
+        return jsonify(message="Credenciais incompletas"), 401
+    
+    hashed_password = generate_password_hash(password)
+    db.user.insert_one({
+        'name': username,
+        'email': email,
+        'password': hashed_password,
+        'score': 50
+    })
+    return jsonify(message="Usuário registrado"), 201
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    try:
+        password, email = data['password'], data['email']
+    except KeyError:
+        return jsonify(message="Email ou senha não recebidos"), 401
+
+    user = db.user.find_one({'email': email})
+
+    if user and check_password_hash(user['password'], password):
+        access_token = create_access_token(identity=str(user['_id']))
+        return jsonify(access_token=access_token), 200
+
+    return jsonify(message="Credenciais inválidas"), 401
+
+@app.route('/delete_user', methods=['POST'])
+@jwt_required()
+def delete_user():
+    current_user_id = get_jwt_identity()
+    mongo.db.users.delete_one({'_id': ObjectId(current_user_id)})
+    return jsonify(message="Usuário deletado com sucesso"), 200
+
+@app.route('/protected', methods=['GET'])
+@jwt_required()
+def protected():
+    return jsonify(message="Essa é uma rota protegida"), 200
+
+@app.route("/create_position", methods=["POST"])
+def create_postion():
+    data = request.get_json()
+    try:
+        origin = data["origin"]
+        origin = origin.split(",")
+        lat, lon = float(origin[0]), float(origin[1])
+        title = data["title"]
+        description = data["description"]
+        classification = data['classification']
+        email = data['email']
+        user_score = data['user_score']
+    except Exception:
+        return jsonify(message="Informações de criação de ponto incompletas"), 401
+    
+    is_valid = False
+    if user_score == 100:
+        is_valid = True
+    
+    kmz_data = {
+        "type": "Feature",
+        "properties": {
+            "title": title,
+            "description": description
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [lat, lon]
+        },
+        "classification": classification,
+        "created": datetime.now(pytz.timezone('America/Fortaleza')),
+        "origin_user_id": email,
+        "is_valid": is_valid
+    }
+    
+    result = db.posicoes.insert_one(kmz_data)
+    return jsonify({"_id": str(result.inserted_id)})
     
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=False)

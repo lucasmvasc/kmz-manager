@@ -1,5 +1,8 @@
 flask
 flask_pymongo
+flask_jwt_extended
+werkzeug
 gunicorn
 python-dotenv
 openrouteservice
+pytz
