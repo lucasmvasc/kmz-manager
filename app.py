@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from bson import ObjectId
@@ -154,6 +154,13 @@ def login():
         return jsonify(access_token=access_token), 200
 
     return jsonify(message="Credenciais inválidas"), 401
+
+@app.route('/delete_user', methods=['POST'])
+@jwt_required()
+def delete_user():
+    current_user_id = get_jwt_identity()
+    mongo.db.users.delete_one({'_id': ObjectId(current_user_id)})
+    return jsonify(message="User deleted successfully"), 200
 
 @app.route('/protected', methods=['GET'])
 @jwt_required()
