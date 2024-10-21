@@ -79,7 +79,7 @@ def delete_kmz(kmz_id):
     else:
         return jsonify({"error": "KMZ not found"}), 404
 
-@app.route("/get_route", methods=["GET"])
+@app.route("/get_route", methods=["POST"])
 def get_route():
     data = request.get_json()
     
@@ -102,7 +102,7 @@ def get_route():
             [center_lon + offset, center_lat + offset]
         ]
         blocked_areas.append(blocked_area)
-            
+
     route = client.directions(
         coordinates = [origin[::-1], destination[::-1]],
         profile = 'foot-walking',
@@ -110,7 +110,7 @@ def get_route():
         options = {
             "avoid_polygons":{
             "type": "MultiPolygon",
-            "coordinates": [[area] for area in blocked_areas]} 
+            "coordinates": [[area] for area in blocked_areas]}
         }
     )
  
