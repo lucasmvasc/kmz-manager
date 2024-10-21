@@ -4,8 +4,10 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from bson import ObjectId
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import os
+import pytz
 
 import openrouteservice
 
@@ -160,13 +162,50 @@ def login():
 def delete_user():
     current_user_id = get_jwt_identity()
     mongo.db.users.delete_one({'_id': ObjectId(current_user_id)})
-    return jsonify(message="User deleted successfully"), 200
+    return jsonify(message="Usuário deletado com sucesso"), 200
 
 @app.route('/protected', methods=['GET'])
 @jwt_required()
 def protected():
     return jsonify(message="Essa é uma rota protegida"), 200
 
+@app.route("/create_position", methods=["POST"])
+def create_postion():
+    data = request.get_json()
+    try:
+        origin = data["origin"]
+        origin = origin.split(",")
+        lat, lon = float(origin[0]), float(origin[1])
+        title = data["title"]
+        description = data["description"]
+        classification = data['classification']
+        email = data['email']
+        user_score = data['user_score']
+    except Exception:
+        return jsonify(message="Informações de criação de ponto incompletas"), 401
+    
+    is_valid = False
+    if user_score == 100:
+        is_valid = True
+    
+    kmz_data = {
+        "type": "Feature",
+        "properties": {
+            "title": title,
+            "description": description
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [lat, lon]
+        },
+        "classification": classification,
+        "created": datetime.now(pytz.timezone('America/Fortaleza')),
+        "origin_user_id": email,
+        "is_valid": is_valid
+    }
+    
+    result = db.posicoes.insert_one(kmz_data)
+    return jsonify({"_id": str(result.inserted_id)})
     
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=False)
