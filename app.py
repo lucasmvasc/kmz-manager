@@ -170,7 +170,7 @@ def protected():
     return jsonify(message="Essa é uma rota protegida"), 200
 
 @app.route("/create_position", methods=["POST"])
-@jwt_required
+@jwt_required()
 def create_postion():
     data = request.get_json()
     try:
@@ -185,7 +185,7 @@ def create_postion():
         return jsonify(message="Informações de criação de ponto incompletas"), 401
     
     user_id = get_jwt_identity()
-            
+        
     is_valid = False
     if user_score == 100:
         is_valid = True
