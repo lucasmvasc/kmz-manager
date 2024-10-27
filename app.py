@@ -185,7 +185,6 @@ def create_postion():
         return jsonify(message="Informações de criação de ponto incompletas"), 401
     
     user_id = get_jwt_identity()
-        
     is_valid = False
     if user_score == 100:
         is_valid = True
