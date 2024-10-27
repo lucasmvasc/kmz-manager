@@ -170,6 +170,7 @@ def protected():
     return jsonify(message="Essa é uma rota protegida"), 200
 
 @app.route("/create_position", methods=["POST"])
+@jwt_required()
 def create_postion():
     data = request.get_json()
     try:
@@ -179,11 +180,12 @@ def create_postion():
         title = data["title"]
         description = data["description"]
         classification = data['classification']
-        email = data['email']
         user_score = data['user_score']
     except Exception:
         return jsonify(message="Informações de criação de ponto incompletas"), 401
     
+    user_id = get_jwt_identity()
+        
     is_valid = False
     if user_score == 100:
         is_valid = True
@@ -200,7 +202,7 @@ def create_postion():
         },
         "classification": classification,
         "created": datetime.now(pytz.timezone('America/Fortaleza')),
-        "origin_user_id": email,
+        "origin_user_id": user_id,
         "is_valid": is_valid
     }
     
