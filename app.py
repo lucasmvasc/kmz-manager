@@ -222,6 +222,26 @@ def create_postion():
     }
     result = db.posicoes.insert_one(kmz_data)
     return jsonify({"_id": str(result.inserted_id)})
+
+def update_position_by(position_id, bool_info):
+    if bool_info:
+        db.posicoes.update_one({'_id': position_id}, {'$set': {'is_valid': bool_info}})
+    else:
+        db.posicoes.delete_one({'_id': position_id})
+    
+@app.route("/validate", methods=["POST"])
+def validate():
+    data = request.get_json()
+    
+    try:
+        position_id = data["position_id"]
+        bool_info = data["bool_info"]
+    except Exception:
+        return jsonify(message="Ponto não pode ser validado"), 401
+    
+    update_position_by(ObjectId(position_id), bool_info)
+    
+    return jsonify("Ponto alterado")
     
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=False)
