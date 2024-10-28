@@ -152,7 +152,7 @@ def login():
     user = db.user.find_one({'email': email})
 
     if user and check_password_hash(user['password'], password):
-        access_token = create_access_token(identity=str(user['_id']))
+        access_token = create_access_token(identity=str(user['_id']), expires_delta=timedelta(days=1))
         return jsonify(access_token=access_token), 200
 
     return jsonify(message="Credenciais inválidas"), 401
@@ -169,6 +169,13 @@ def delete_user():
 def protected():
     return jsonify(message="Essa é uma rota protegida"), 200
 
+def get_score_by(user_id):
+    result = db.user.find_one({'_id': user_id}, {'score': 1, '_id': 0})
+    if result:
+        return result.get('score', 0)
+    else:
+        return 0
+
 @app.route("/create_position", methods=["POST"])
 @jwt_required()
 def create_postion():
@@ -180,13 +187,15 @@ def create_postion():
         title = data["title"]
         description = data["description"]
         classification = data['classification']
-        user_score = data['user_score']
     except Exception:
         return jsonify(message="Informações de criação de ponto incompletas"), 401
-    
-    user_id = get_jwt_identity()
+
+    user_str_id = get_jwt_identity()
+    user_id = ObjectId(user_str_id)
+    score = get_score_by(user_id)
+
     is_valid = False
-    if user_score == 100:
+    if score == 100:
         is_valid = True
     
     kmz_data = {
@@ -204,7 +213,6 @@ def create_postion():
         "origin_user_id": user_id,
         "is_valid": is_valid
     }
-    
     result = db.posicoes.insert_one(kmz_data)
     return jsonify({"_id": str(result.inserted_id)})
     
