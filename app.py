@@ -13,6 +13,13 @@ import openrouteservice
 
 load_dotenv()
 
+CATEGORIES  = {
+    0: "Buraco",
+    1: "Assalto",
+    2: "Alagamento",
+    3: "Obra",
+    4: "Interditado"
+}
 OPENROUTES_API_KEY = os.getenv("OPENROUTES_API_KEY")
 client = openrouteservice.Client(key=OPENROUTES_API_KEY)
 
@@ -185,11 +192,11 @@ def create_postion():
         origin = origin.split(",")
         lat, lon = float(origin[0]), float(origin[1])
         title = data["title"]
-        description = data["description"]
         classification = data['classification']
     except Exception:
         return jsonify(message="Informações de criação de ponto incompletas"), 401
 
+    description = CATEGORIES[classification]
     user_str_id = get_jwt_identity()
     user_id = ObjectId(user_str_id)
     score = get_score_by(user_id)
