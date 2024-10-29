@@ -168,7 +168,7 @@ def login():
 @jwt_required()
 def delete_user():
     current_user_id = get_jwt_identity()
-    mongo.db.users.delete_one({'_id': ObjectId(current_user_id)})
+    db.user.delete_one({'_id': ObjectId(current_user_id)})
     return jsonify(message="Usuário deletado com sucesso"), 200
 
 @app.route('/protected', methods=['GET'])
@@ -229,6 +229,29 @@ def update_position_by(position_id, bool_info):
     else:
         db.posicoes.delete_one({'_id': position_id})
     
+    pos = db.posicoes.find_one({'_id': position_id})
+    return pos.get("origin_user_id", None)
+
+def update_score(user, bool_info):
+    if bool_info:
+        if user['score'] < 90:
+            user['score'] += 10
+        else:
+            user['score'] = 100
+    else:
+        if user['score'] > 10:
+            user['score'] -= 10
+        else:
+            user['score'] = 0
+    return user
+
+def update_user_score(user_id, bool_info):
+    user = db.user.find_one({'_id': user_id})
+    
+    if user:
+        updated_user = update_score(user, bool_info)
+        db.user.update_one({'_id': user_id}, {'$set': {'score': updated_user['score']}})
+    
 @app.route("/validate", methods=["POST"])
 def validate():
     data = request.get_json()
@@ -239,9 +262,10 @@ def validate():
     except Exception:
         return jsonify(message="Ponto não pode ser validado"), 401
     
-    update_position_by(ObjectId(position_id), bool_info)
+    user_id = update_position_by(ObjectId(position_id), bool_info)
+    update_user_score(user_id, bool_info)
     
-    return jsonify("Ponto alterado")
+    return jsonify("Ponto alterado e usuário modificado")
     
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=False)
