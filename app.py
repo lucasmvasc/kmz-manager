@@ -223,6 +223,14 @@ def create_postion():
     result = db.posicoes.insert_one(kmz_data)
     return jsonify({"_id": str(result.inserted_id)})
 
+def validate_same_user_position(position_id, current_user_id):
+    
+    posicao = db.posicoes.find_one({'_id': position_id})
+    origin_user_id = posicao["origin_user_id"]
+    if str(origin_user_id) == str(current_user_id):
+        return False
+    return True
+
 def update_position_by(position_id, bool_info):
     if bool_info:
         db.posicoes.update_one({'_id': position_id}, {'$set': {'is_valid': bool_info}})
@@ -253,6 +261,7 @@ def update_user_score(user_id, bool_info):
         db.user.update_one({'_id': user_id}, {'$set': {'score': updated_user['score']}})
     
 @app.route("/validate", methods=["POST"])
+@jwt_required()
 def validate():
     data = request.get_json()
     
@@ -262,6 +271,10 @@ def validate():
     except Exception:
         return jsonify(message="Ponto não pode ser validado"), 401
     
+    current_user_id = get_jwt_identity()
+    is_valid_user = validate_same_user_position(ObjectId(position_id), current_user_id)
+    if not is_valid_user:
+        return "Usuário validou o próprio ponto", 401
     user_id = update_position_by(ObjectId(position_id), bool_info)
     update_user_score(user_id, bool_info)
     
