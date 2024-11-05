@@ -41,11 +41,17 @@ def get_kmzs():
     return jsonify(geojson)
 
 @app.route("/posicoes", methods=["GET"])
-def get_kmzs():
-    kmzs = db.posicoes.find({}, {"_id": 0})
+def get_posicoes():
+    posicoes = db.posicoes.find({}, {"origin_user_id": 0})
+    
+    features = []
+    for doc in posicoes:
+        doc["_id"] = str(doc["_id"])  # Convert ObjectId to string
+        features.append(doc)
+        
     geojson = {
         "type": "FeatureCollection",
-        "features": list(kmzs)
+        "features": features
     }
     return jsonify(geojson)
 
