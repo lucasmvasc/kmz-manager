@@ -280,7 +280,7 @@ def validate():
     if not is_valid_user:
         return "Usuário validou o próprio ponto", 401
     
-    is_valid_pos = verify_current_pos_status(position_id)
+    is_valid_pos = verify_current_pos_status(ObjectId(position_id))
     if not is_valid_pos:
         return "Ponto já validado", 401
         
