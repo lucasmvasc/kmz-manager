@@ -40,6 +40,15 @@ def get_kmzs():
     }
     return jsonify(geojson)
 
+@app.route("/posicoes", methods=["GET"])
+def get_kmzs():
+    kmzs = db.posicoes.find({}, {"_id": 0})
+    geojson = {
+        "type": "FeatureCollection",
+        "features": list(kmzs)
+    }
+    return jsonify(geojson)
+
 @app.route("/kmzs/<kmz_id>", methods=["GET"])
 def get_kmz(kmz_id):
     try:
