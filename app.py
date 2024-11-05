@@ -4,10 +4,9 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from bson import ObjectId
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
-import pytz
 
 import openrouteservice
 
@@ -216,7 +215,7 @@ def create_postion():
             "coordinates": [lat, lon]
         },
         "classification": classification,
-        "created": datetime.now(pytz.timezone('America/Fortaleza')),
+        "created": datetime.now(),
         "origin_user_id": user_id,
         "is_valid": is_valid
     }
@@ -224,12 +223,17 @@ def create_postion():
     return jsonify({"_id": str(result.inserted_id)})
 
 def validate_same_user_position(position_id, current_user_id):
-    
     posicao = db.posicoes.find_one({'_id': position_id})
     origin_user_id = posicao["origin_user_id"]
     if str(origin_user_id) == str(current_user_id):
         return False
     return True
+
+def verify_current_pos_status(position_id):
+    current_pos = db.posicoes.find_one({'_id': position_id})
+    current_pos_is_valid = current_pos['is_valid']
+    if current_pos_is_valid: return False
+    else: return True
 
 def update_position_by(position_id, bool_info):
     if bool_info:
@@ -275,6 +279,11 @@ def validate():
     is_valid_user = validate_same_user_position(ObjectId(position_id), current_user_id)
     if not is_valid_user:
         return "Usuário validou o próprio ponto", 401
+    
+    is_valid_pos = verify_current_pos_status(position_id)
+    if is_valid_pos:
+        return "Ponto já validado", 401
+        
     user_id = update_position_by(ObjectId(position_id), bool_info)
     update_user_score(user_id, bool_info)
     
