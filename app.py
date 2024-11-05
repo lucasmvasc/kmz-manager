@@ -46,7 +46,7 @@ def get_posicoes():
     
     features = []
     for doc in posicoes:
-        doc["_id"] = str(doc["_id"])  # Convert ObjectId to string
+        doc["_id"] = str(doc["_id"])
         features.append(doc)
         
     geojson = {
