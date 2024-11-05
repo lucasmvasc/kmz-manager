@@ -281,7 +281,7 @@ def validate():
         return "Usuário validou o próprio ponto", 401
     
     is_valid_pos = verify_current_pos_status(position_id)
-    if is_valid_pos:
+    if not is_valid_pos:
         return "Ponto já validado", 401
         
     user_id = update_position_by(ObjectId(position_id), bool_info)
