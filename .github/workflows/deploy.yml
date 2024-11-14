@@ -13,11 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         
   deploy:
@@ -43,8 +43,8 @@ jobs:
             sudo supervisorctl restart kmz_manager
           EOF
 
-  run-nettacker:
-    name: Run Nettacker
+  dynamic-analysis:
+    name: Nettacker
     runs-on: ubuntu-latest
     needs: deploy
 
@@ -61,4 +61,4 @@ jobs:
       - name: Run Nettacker Command
         run: |
           source venv/bin/activate
-          nettacker -i http://34.4.44.4 -m http_status_scan
+          nettacker -i ${{ secrets.EC2_HOST }} --profile scan --ports 80

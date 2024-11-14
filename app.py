@@ -28,7 +28,7 @@ mongo = PyMongo(app)
 db = mongo.cx.get_database("alagaprev")
 collection = db.kmzs
 
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')  # Troque por uma chave segura
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 jwt = JWTManager(app)
 
 @app.route("/kmzs", methods=["GET"])
