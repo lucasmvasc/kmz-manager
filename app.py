@@ -67,6 +67,11 @@ def get_kmz(kmz_id):
     else:
         return jsonify({"error": "KMZ not found"}), 404
 
+@app.route('/kmz/<username>')
+def get_user(username):
+    user = db.users.find_one({"username": username})
+    return {'user': user}
+
 @app.route("/kmzs", methods=["POST"])
 def add_kmz():
     data = request.get_json()
