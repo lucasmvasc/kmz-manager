@@ -43,8 +43,8 @@ jobs:
             sudo supervisorctl restart kmz_manager
           EOF
 
-  run-nettacker:
-    name: Run Nettacker
+  dynamic-analysis:
+    name: Nettacker
     runs-on: ubuntu-latest
     needs: deploy
 

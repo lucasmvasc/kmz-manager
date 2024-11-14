@@ -19,7 +19,8 @@ CATEGORIES  = {
     3: "Obra",
     4: "Interditado"
 }
-OPENROUTES_API_KEY = os.getenv("OPENROUTES_API_KEY")
+# OPENROUTES_API_KEY = os.getenv("OPENROUTES_API_KEY")
+OPENROUTES_API_KEY='APISALDMKLDSAFOAP'
 client = openrouteservice.Client(key=OPENROUTES_API_KEY)
 
 app = Flask(__name__)
