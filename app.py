@@ -112,15 +112,21 @@ def delete_kmz(kmz_id):
 def get_route():
     data = request.get_json()
     
+    is_walking = True
+    try:
+        is_walking = data['is_walking']
+    except Exception:
+        pass
     origin, destination = data["origin"], data["destination"]
     origin, destination = origin.split(","), destination.split(",")
     origin = (float(origin[0]), float(origin[1]))
     destination = (float(destination[0]), float(destination[1]))
 
-    kmzs = collection.find({}, {"_id": 0})
+    posicoes = db.posicoes.find({}, {"_id": 0, "origin_user_id": 0})
     blocked_areas = []
-    for kmz in kmzs:
-        coord = kmz["geometry"]["coordinates"]
+    for pos in posicoes:
+        if not pos['is_valid']: continue
+        coord = pos["geometry"]["coordinates"]
         center_lat, center_lon = coord[0], coord[1]
         offset= 0.0001
         blocked_area = [
@@ -134,7 +140,7 @@ def get_route():
 
     route = client.directions(
         coordinates = [origin[::-1], destination[::-1]],
-        profile = 'foot-walking',
+        profile = 'foot-walking' if is_walking else "cycling-regular",
         format = 'geojson',
         options = {
             "avoid_polygons":{
