@@ -19,8 +19,7 @@ CATEGORIES  = {
     3: "Obra",
     4: "Interditado"
 }
-# OPENROUTES_API_KEY = os.getenv("OPENROUTES_API_KEY")
-OPENROUTES_API_KEY='APISALDMKLDSAFOAP'
+OPENROUTES_API_KEY = os.getenv("OPENROUTES_API_KEY")
 client = openrouteservice.Client(key=OPENROUTES_API_KEY)
 
 app = Flask(__name__)
@@ -29,7 +28,7 @@ mongo = PyMongo(app)
 db = mongo.cx.get_database("alagaprev")
 collection = db.kmzs
 
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')  # Troque por uma chave segura
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 jwt = JWTManager(app)
 
 @app.route("/kmzs", methods=["GET"])
@@ -66,11 +65,6 @@ def get_kmz(kmz_id):
         return jsonify(kmz)
     else:
         return jsonify({"error": "KMZ not found"}), 404
-
-@app.route('/kmz/<username>')
-def get_user(username):
-    user = db.users.find_one({"username": username})
-    return {'user': user}
 
 @app.route("/kmzs", methods=["POST"])
 def add_kmz():
