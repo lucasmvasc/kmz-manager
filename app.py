@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template_string
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -309,6 +309,30 @@ def validate():
     update_user_score(user_id, bool_info)
     
     return jsonify("Ponto alterado e usuário modificado")
-    
+
+@app.route('/greet', methods=['GET', 'POST'])
+def greet():
+    if request.method == 'POST':
+        name = request.form['name']
+        # Vulnerable to SSTI
+        return render_template_string(f'Hello, {name}!')
+    return '''
+        <form method="post">
+            <input type="text" name="name" placeholder="Enter your name">
+            <input type="submit" value="Greet">
+        </form>
+    '''
+def get_db_connection():
+    conn = ""
+    return conn
+
+@app.route('/users/<int:user_id>')
+def get_user(user_id):
+    # Vulnerable to SQL Injection
+    conn = get_db_connection()
+    user = conn.execute(f'SELECT * FROM users WHERE id = {user_id}').fetchone()
+    conn.close()
+    return f'User: {user["name"]}' if user else 'User not found'
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=False)
