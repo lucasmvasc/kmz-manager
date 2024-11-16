@@ -310,5 +310,18 @@ def validate():
     
     return jsonify("Ponto alterado e usuário modificado")
 
+@app.route('/greet', methods=['GET', 'POST'])
+def greet():
+    if request.method == 'POST':
+        name = request.form['name']
+        # Vulnerable to SSTI
+        return render_template_string(f'Hello, {name}!')
+    return '''
+        <form method="post">
+            <input type="text" name="name" placeholder="Enter your name">
+            <input type="submit" value="Greet">
+        </form>
+    '''
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=False)
